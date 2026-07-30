@@ -2,6 +2,7 @@ using ClinicalGrpcService.Application;
 using ClinicalGrpcService.Grpc.Mappers;
 using ClinicalGrpcService.Grpc.Services;
 using ClinicalGrpcService.Infra;
+using ClinicalGrpcService.Infra.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,8 @@ if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Local"))
 {
     app.MapGrpcReflectionService();
 }
+
+await app.Services.InitialiseDatabaseAsync();
 
 // Configure the HTTP request pipeline.
 app.MapGrpcService<PhysicianNoteRecordingService>();
