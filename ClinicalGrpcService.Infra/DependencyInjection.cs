@@ -1,7 +1,5 @@
 ﻿using ClinicalGrpcService.Infra.Interfaces;
 using ClinicalGrpcService.Infra.Services;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,19 +49,6 @@ public static class DependencyInjection
                 .ReadFrom.Configuration(configuration)
                 .ReadFrom.Services(services)
                 .Enrich.FromLogContext();
-        });
-    }
-
-    public static void AddWebHostInfrastructure(
-        this IWebHostBuilder webHostBuilder)
-    {
-        //To accept both HTTP/1.1 (for the plain GET / landing page) and HTTP/2 (for gRPC) on the same port.
-        webHostBuilder.ConfigureKestrel(options =>
-        {
-            options.ConfigureEndpointDefaults(listenOptions =>
-            {
-                listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
-            });
         });
     }
 }
