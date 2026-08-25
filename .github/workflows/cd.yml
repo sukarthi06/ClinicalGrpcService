@@ -53,6 +53,14 @@ jobs:
             --push .
           echo "::notice title=Container image published::Image pushed to ACR for commit ${{ github.event.workflow_run.head_sha }}."
 
+      - name: Set ASPNETCORE_ENVIRONMENT
+        run: |
+          az webapp config appsettings set \
+            --name ${{ env.WEBAPP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --settings "ASPNETCORE_ENVIRONMENT=UAT"
+          echo "::notice title=Environment updated::ASPNETCORE_ENVIRONMENT app setting was set to UAT."
+
       - name: Set RecordingDb connection string
         env:
           CLINICAL_DOCUMENTATION_DB_CONNECTION_STRING: ${{ secrets.CLINICAL_DOCUMENTATION_DB_CONNECTION_STRING }}
