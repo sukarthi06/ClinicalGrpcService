@@ -63,6 +63,27 @@ jobs:
             --settings "ConnectionStrings__ClinicalDocumentationDb=$CLINICAL_DOCUMENTATION_DB_CONNECTION_STRING"
           echo "::notice title=Connection string updated::ClinicalDocumentationDb connection string app setting was updated."
 
+      - name: Set OTLP endpoint and protocol
+        env:
+          OTLP_ENDPOINT: ${{ vars.OTLP_ENDPOINT }}
+          OTLP_PROTOCOL: ${{ vars.OTLP_PROTOCOL }}
+        run: |
+          az webapp config appsettings set \
+            --name ${{ env.WEBAPP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --settings "Otlp__Endpoint=$OTLP_ENDPOINT" "Otlp__Protocol=$OTLP_PROTOCOL"
+          echo "::notice title=OTLP endpoint and protocol updated::Otlp__Endpoint and Otlp__Protocol app settings were updated."
+
+      - name: Set OTLP headers
+        env:
+          OTLP_HEADERS: ${{ secrets.GRAFANA_OTLP_AUTH_HEADER }}
+        run: |
+          az webapp config appsettings set \
+            --name ${{ env.WEBAPP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --settings "Otlp__Headers=$OTLP_HEADERS"
+          echo "::notice title=OTLP headers updated::Otlp__Headers app setting was updated."
+
       - name: Deploy image to App Service
         run: |
           az webapp config container set \

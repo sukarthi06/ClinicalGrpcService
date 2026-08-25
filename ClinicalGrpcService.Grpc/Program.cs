@@ -1,4 +1,5 @@
 using ClinicalGrpcService.Application;
+using ClinicalGrpcService.Grpc.Common;
 using ClinicalGrpcService.Grpc.Mappers;
 using ClinicalGrpcService.Grpc.Services;
 using ClinicalGrpcService.Infra;
@@ -7,10 +8,11 @@ using ClinicalGrpcService.Infra.Extensions;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddGrpc();
+builder.Services.AddGrpc(options => options.Interceptors.Add<ExceptionInterceptor>());
 
 builder.Host.AddHostInfrastructure(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddObservability(builder.Configuration);
 builder.Services.AddAppService(builder.Configuration);
 
 if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Local"))

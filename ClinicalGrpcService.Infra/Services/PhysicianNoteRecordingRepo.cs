@@ -3,6 +3,7 @@ using ClinicalGrpcService.Domain.ValueObjetcs;
 using ClinicalGrpcService.Infra.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace ClinicalGrpcService.Infra.Services;
 
@@ -10,13 +11,17 @@ public class PhysicianNoteRecordingRepo(
     ApplicationDbContext dbContext,
     ILogger<PhysicianNoteRecordingRepo> logger) : IPhysicianNoteRecordingRepo
 {
+    private static readonly ActivitySource ActivitySource = new("ClinicalGrpcService.Repository");
+
     public Task<PhysicianNoteRecording?> GetByIdAsync(PhysicianNoteId id, CancellationToken ct)
-    {        
+    {
         throw new NotImplementedException();
     }
 
     public async Task<PhysicianNoteRecording?> GetByRecordingIdAsync(RecordingId recordingId, CancellationToken ct)
     {
+        using var activity = ActivitySource.StartActivity(nameof(GetByRecordingIdAsync));
+
         var result = await dbContext.PhysicianNoteRecording
             .FirstOrDefaultAsync(pn => pn.RecordingId == recordingId && pn.RecordStatus == 1, ct);
         return result;
@@ -24,6 +29,8 @@ public class PhysicianNoteRecordingRepo(
 
     public async Task<bool> IsPhysicianNoteReadyAsync(RecordingId recordingId, CancellationToken ct)
     {
+        using var activity = ActivitySource.StartActivity(nameof(IsPhysicianNoteReadyAsync));
+
         var result = await dbContext.PhysicianNoteRecording
             .CountAsync(pn => pn.RecordingId == recordingId && pn.RecordStatus == 1, ct);
         return (result == 1);
@@ -31,6 +38,8 @@ public class PhysicianNoteRecordingRepo(
 
     public async Task<bool> SaveAsync(PhysicianNoteRecording noteRecording, CancellationToken cancellationToken)
     {
+        using var activity = ActivitySource.StartActivity(nameof(SaveAsync));
+
         var existingEntity = await dbContext.PhysicianNoteRecording.FindAsync(noteRecording.PhysicianNoteId, cancellationToken);
         if (existingEntity != null) 
         {
