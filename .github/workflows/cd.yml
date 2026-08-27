@@ -71,7 +71,7 @@ jobs:
             --settings "ConnectionStrings__ClinicalDocumentationDb=$CLINICAL_DOCUMENTATION_DB_CONNECTION_STRING"
           echo "::notice title=Connection string updated::ClinicalDocumentationDb connection string app setting was updated."
 
-      - name: Set OTLP endpoint and protocol
+      - name: Set OTLP endpoints and protocol
         env:
           OTLP_ENDPOINT: ${{ vars.OTLP_ENDPOINT }}
           OTLP_PROTOCOL: ${{ vars.OTLP_PROTOCOL }}
@@ -79,8 +79,12 @@ jobs:
           az webapp config appsettings set \
             --name ${{ env.WEBAPP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
-            --settings "Otlp__Endpoint=$OTLP_ENDPOINT" "Otlp__Protocol=$OTLP_PROTOCOL"
-          echo "::notice title=OTLP endpoint and protocol updated::Otlp__Endpoint and Otlp__Protocol app settings were updated."
+            --settings \
+              "Otlp__Endpoint=$OTLP_ENDPOINT" \
+              "Otlp__Protocol=$OTLP_PROTOCOL" \
+              "Otlp__TracesEndpoint=${OTLP_ENDPOINT%/}/v1/traces" \
+              "Otlp__MetricsEndpoint=${OTLP_ENDPOINT%/}/v1/metrics"
+          echo "::notice title=OTLP endpoints and protocol updated::Otlp__Endpoint, Otlp__Protocol, Otlp__TracesEndpoint, and Otlp__MetricsEndpoint app settings were updated."
 
       - name: Set OTLP headers
         env:
