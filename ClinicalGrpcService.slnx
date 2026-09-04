@@ -3,4 +3,5 @@
   <Project Path="ClinicalGrpcService.Domain/ClinicalGrpcService.Domain.csproj" />
   <Project Path="ClinicalGrpcService.Grpc/ClinicalGrpcService.Grpc.csproj" />
   <Project Path="ClinicalGrpcService.Infra/ClinicalGrpcService.Infra.csproj" />
+  <Project Path="ClinicalGrpcService.ServiceDefaults/ClinicalGrpcService.ServiceDefaults.csproj" />
 </Solution>

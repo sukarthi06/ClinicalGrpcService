@@ -30,6 +30,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ClinicalGrpcService.Application\ClinicalGrpcService.Application.csproj" />
+    <ProjectReference Include="..\ClinicalGrpcService.ServiceDefaults\ClinicalGrpcService.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>
