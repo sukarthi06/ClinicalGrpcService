@@ -1,10 +1,12 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -12,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -25,5 +27,8 @@ jobs:
       - name: Build
         run: dotnet build ClinicalGrpcService.slnx -c Release --no-restore
 
-      - name: Build Docker image
+      - name: Build gRPC service image
         run: docker build -f ClinicalGrpcService.Grpc/Dockerfile -t clinicalgrpcservice:ci .
+
+      - name: Build Clinical API image
+        run: docker build -f ClinicalService.Api/Dockerfile -t clinicalservice-api:ci .

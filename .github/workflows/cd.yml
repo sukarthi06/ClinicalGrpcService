@@ -1,40 +1,45 @@
 name: CD
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
+  push:
     branches: [main]
 
 permissions:
-  id-token: write
   contents: read
 
 concurrency:
-  group: clinical-grpc-service-deploy
+  group: clinical-service-deploy
   cancel-in-progress: false
 
 env:
   RESOURCE_GROUP: rg-stt
+  KEY_VAULT_URI: https://kv-stt-dev.vault.azure.net
   WEBAPP_NAME: stt-clinicalgrpcservice-dev
   IMAGE_NAME: clinicalgrpcservice-comp
+  API_APP_NAME: stt-clinicalapi-dev
+  API_IMAGE_NAME: clinicalapi-comp
 
 jobs:
-  deploy:
-    name: Deploy to Azure App Service
-    if: github.event.workflow_run.conclusion == 'success'
+  ci:
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  deploy-grpc:
+    name: Deploy gRPC service to App Service
+    needs: ci
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/checkout@v4
 
       - name: Log source checkout status
         run: |
           echo "::notice title=Checkout completed::Deploying commit $(git rev-parse --short HEAD)."
 
       - name: Azure login
-        uses: azure/login@v3
+        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -49,9 +54,9 @@ jobs:
         run: |
           az acr login --name ${{ vars.ACR_NAME }} --resource-group ${{ env.RESOURCE_GROUP }}
           docker buildx build -f ClinicalGrpcService.Grpc/Dockerfile \
-            -t ${{ vars.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.event.workflow_run.head_sha }} \
+            -t ${{ vars.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
             --push .
-          echo "::notice title=Container image published::Image pushed to ACR for commit ${{ github.event.workflow_run.head_sha }}."
+          echo "::notice title=Container image published::Image pushed to ACR for commit ${{ github.sha }}."
 
       - name: Set ASPNETCORE_ENVIRONMENT
         run: |
@@ -61,7 +66,7 @@ jobs:
             --settings "ASPNETCORE_ENVIRONMENT=UAT"
           echo "::notice title=Environment updated::ASPNETCORE_ENVIRONMENT app setting was set to UAT."
 
-      - name: Set RecordingDb connection string
+      - name: Set ClinicalDocumentationDb connection string
         env:
           CLINICAL_DOCUMENTATION_DB_CONNECTION_STRING: ${{ secrets.CLINICAL_DOCUMENTATION_DB_CONNECTION_STRING }}
         run: |
@@ -70,6 +75,17 @@ jobs:
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --settings "ConnectionStrings__ClinicalDocumentationDb=$CLINICAL_DOCUMENTATION_DB_CONNECTION_STRING"
           echo "::notice title=Connection string updated::ClinicalDocumentationDb connection string app setting was updated."
+
+      - name: Set field encryption Key Vault references
+        run: |
+          az webapp config appsettings set \
+            --name ${{ env.WEBAPP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --settings \
+              "FieldEncryption__EncryptionKeys__v1=@Microsoft.KeyVault(SecretUri=${{ env.KEY_VAULT_URI }}/secrets/clinical-field-encryption-key-v1)" \
+              "FieldEncryption__HashKey=@Microsoft.KeyVault(SecretUri=${{ env.KEY_VAULT_URI }}/secrets/clinical-field-encryption-hash-key)" \
+              "FieldEncryption__CurrentKeyVersion=v1"
+          echo "::notice title=Field encryption updated::Field encryption settings point to Key Vault."
 
       - name: Set OTLP endpoints and protocol
         env:
@@ -84,7 +100,7 @@ jobs:
               "Otlp__Protocol=$OTLP_PROTOCOL" \
               "Otlp__TracesEndpoint=${OTLP_ENDPOINT%/}/v1/traces" \
               "Otlp__MetricsEndpoint=${OTLP_ENDPOINT%/}/v1/metrics"
-          echo "::notice title=OTLP endpoints and protocol updated::Otlp__Endpoint, Otlp__Protocol, Otlp__TracesEndpoint, and Otlp__MetricsEndpoint app settings were updated."
+          echo "::notice title=OTLP endpoints and protocol updated::OTLP app settings were updated."
 
       - name: Set OTLP headers
         env:
@@ -101,9 +117,9 @@ jobs:
           az webapp config container set \
             --name ${{ env.WEBAPP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
-            --container-image-name ${{ vars.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.event.workflow_run.head_sha }} \
+            --container-image-name ${{ vars.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
             --container-registry-url https://${{ vars.ACR_LOGIN_SERVER }}
-          echo "::notice title=App Service container updated::Web App container image set to commit ${{ github.event.workflow_run.head_sha }}."
+          echo "::notice title=App Service container updated::Web App container image set to commit ${{ github.sha }}."
 
       - name: Restart App Service
         run: |
@@ -116,7 +132,7 @@ jobs:
 
           app="${{ env.WEBAPP_NAME }}"
           rg="${{ env.RESOURCE_GROUP }}"
-          expected_image="${{ vars.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.event.workflow_run.head_sha }}"
+          expected_image="${{ vars.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
 
           actual_image="$(az webapp show --name "$app" --resource-group "$rg" --query siteConfig.linuxFxVersion --output tsv)"
           actual_image="${actual_image#DOCKER|}"
@@ -139,6 +155,134 @@ jobs:
             fi
 
             echo "Web App state: $state, HTTP status: $status_code. Waiting..."
+            sleep 10
+          done
+
+          echo "Deployment verification timed out."
+          exit 1
+
+  deploy-api:
+    name: Deploy Clinical API to Container App
+    needs: deploy-grpc
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push image to ACR
+        run: |
+          az acr login --name ${{ vars.ACR_NAME }} --resource-group ${{ env.RESOURCE_GROUP }}
+          docker buildx build -f ClinicalService.Api/Dockerfile \
+            -t ${{ vars.ACR_LOGIN_SERVER }}/${{ env.API_IMAGE_NAME }}:${{ github.sha }} \
+            --push .
+          echo "::notice title=Container image published::API image pushed to ACR for commit ${{ github.sha }}."
+
+      - name: Wait for any active Container App operation
+        run: |
+          for attempt in {1..60}; do
+            state="$(az containerapp show --name ${{ env.API_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query properties.provisioningState --output tsv)"
+            case "$state" in
+              Succeeded) echo "::notice title=Container App ready::No active Container App operation."; exit 0 ;;
+              Failed) echo "::warning title=Previous operation failed::Continuing with this corrective deployment."; exit 0 ;;
+              *) echo "Container App provisioning state: $state. Waiting..."; sleep 10 ;;
+            esac
+          done
+          echo "Timed out waiting for the Container App to become ready."
+          exit 1
+
+      - name: Set connection string and OTLP headers as Container App secrets
+        env:
+          CLINICAL_DOCUMENTATION_DB_CONNECTION_STRING: ${{ secrets.CLINICAL_DOCUMENTATION_DB_CONNECTION_STRING }}
+          OTLP_HEADERS: ${{ secrets.GRAFANA_OTLP_AUTH_HEADER }}
+        run: |
+          az containerapp secret set \
+            --name ${{ env.API_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --secrets \
+              "clinicaldb-connection=$CLINICAL_DOCUMENTATION_DB_CONNECTION_STRING" \
+              "otlp-headers=$OTLP_HEADERS" \
+            --output none
+          echo "::notice title=Secret update completed::Connection string and OTLP headers secrets were updated."
+
+      - name: Wait for secret update
+        run: |
+          for attempt in {1..60}; do
+            state="$(az containerapp show --name ${{ env.API_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query properties.provisioningState --output tsv)"
+            case "$state" in
+              Succeeded) echo "::notice title=Secret update ready::Container App provisioning succeeded."; exit 0 ;;
+              Failed) echo "::warning title=Secret update reported failed::Continuing with this corrective deployment."; exit 0 ;;
+              *) echo "Container App provisioning state: $state. Waiting..."; sleep 10 ;;
+            esac
+          done
+          echo "Timed out waiting for secret update."
+          exit 1
+
+      - name: Deploy to Container App
+        env:
+          OTLP_ENDPOINT: ${{ vars.OTLP_ENDPOINT }}
+          OTLP_PROTOCOL: ${{ vars.OTLP_PROTOCOL }}
+        run: |
+          # --replace-env-vars makes this list the complete set
+          az containerapp update \
+            --name ${{ env.API_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ vars.ACR_LOGIN_SERVER }}/${{ env.API_IMAGE_NAME }}:${{ github.sha }} \
+            --replace-env-vars \
+              "ASPNETCORE_ENVIRONMENT=UAT" \
+              "ConnectionStrings__ClinicalDocumentationDb=secretref:clinicaldb-connection" \
+              "FieldEncryption__EncryptionKeys__v1=secretref:field-key-v1" \
+              "FieldEncryption__HashKey=secretref:field-hash-key" \
+              "FieldEncryption__CurrentKeyVersion=v1" \
+              "KeyVault__Uri=${{ env.KEY_VAULT_URI }}/" \
+              "Otlp__Endpoint=$OTLP_ENDPOINT" \
+              "Otlp__Protocol=$OTLP_PROTOCOL" \
+              "Otlp__TracesEndpoint=${OTLP_ENDPOINT%/}/v1/traces" \
+              "Otlp__MetricsEndpoint=${OTLP_ENDPOINT%/}/v1/metrics" \
+              "Otlp__Headers=secretref:otlp-headers" \
+            --output none
+          echo "::notice title=Container App deployment completed::Azure accepted the image update."
+
+      - name: Verify deployed revision
+        run: |
+          set -euo pipefail
+
+          app="${{ env.API_APP_NAME }}"
+          rg="${{ env.RESOURCE_GROUP }}"
+          expected_image="${{ vars.ACR_LOGIN_SERVER }}/${{ env.API_IMAGE_NAME }}:${{ github.sha }}"
+
+          for attempt in {1..60}; do
+            app_state="$(az containerapp show --name "$app" --resource-group "$rg" --query properties.provisioningState --output tsv)"
+            revision="$(az containerapp show --name "$app" --resource-group "$rg" --query properties.latestReadyRevisionName --output tsv)"
+
+            if [[ "$app_state" == "Succeeded" && -n "$revision" ]]; then
+              details="$(az containerapp revision show \
+                --name "$app" \
+                --resource-group "$rg" \
+                --revision "$revision" \
+                --query '{active:properties.active,health:properties.healthState,provisioning:properties.provisioningState,image:properties.template.containers[0].image}' \
+                --output json)"
+
+              echo "$details"
+
+              actual_image="$(echo "$details" | jq -r .image)"
+              health="$(echo "$details" | jq -r .health)"
+              provisioning="$(echo "$details" | jq -r .provisioning)"
+
+              if [[ "$actual_image" == "$expected_image" && "$health" == "Healthy" && "$provisioning" == "Provisioned" ]]; then
+                echo "::notice title=Deployment verified::Revision $revision is active, healthy, provisioned, and running the expected image."
+                exit 0
+              fi
+            fi
+
             sleep 10
           done
 
