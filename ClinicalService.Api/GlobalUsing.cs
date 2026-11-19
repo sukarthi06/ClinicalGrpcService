@@ -1,0 +1,11 @@
+﻿global using ClinicalGrpcService.Domain.Enums;
+global using FluentValidation;
+global using ClinicalService.Api.Contracts;
+global using ClinicalGrpcService.Domain.Entities.Patients;
+global using ClinicalGrpcService.Domain.ValueObjetcs;
+global using ClinicalGrpcService.Application.Interfaces;
+global using ClinicalService.Api.Mappers;
+global using ClinicalService.Api.Security;
+global using ClinicalService.Api.Validation;
+global using Microsoft.AspNetCore.Http.HttpResults;
+global using Microsoft.AspNetCore.Mvc;

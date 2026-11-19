@@ -12,6 +12,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.AddScoped<IPhysicianNoteRecordingService, PhysicianNoteRecordingService>();
+        services.AddScoped<IPatientService, PatientService>();
         return services;
     }
 }

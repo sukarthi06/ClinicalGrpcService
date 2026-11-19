@@ -1,0 +1,10 @@
+﻿global using Microsoft.EntityFrameworkCore;
+global using Microsoft.EntityFrameworkCore.Metadata.Builders;
+global using ClinicalGrpcService.Domain.Entities.Patients;
+global using ClinicalGrpcService.Domain.ValueObjetcs;
+global using ClinicalGrpcService.Domain.Entities;
+global using ClinicalGrpcService.Infra.Interfaces;
+global using Microsoft.Extensions.Logging;
+global using ClinicalGrpcService.Infra.Configuration.Patients;
+global using ClinicalGrpcService.Infra.Security;
+global using ClinicalGrpcService.Infra.Abstraction;

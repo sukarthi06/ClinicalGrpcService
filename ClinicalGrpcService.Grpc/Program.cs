@@ -12,6 +12,9 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddGrpc(options => options.Interceptors.Add<ExceptionInterceptor>());
 
+if (builder.Environment.IsEnvironment("Local"))
+    builder.Configuration.AddUserSecrets<Program>(optional: true);
+
 builder.Host.AddHostInfrastructure(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 if (!builder.Environment.IsEnvironment("Local"))

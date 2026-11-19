@@ -1,6 +1,4 @@
-﻿using ClinicalGrpcService.Domain.ValueObjetcs;
-
-namespace ClinicalGrpcService.Domain.Entities;
+﻿namespace ClinicalGrpcService.Domain.Entities;
 
 public class PhysicianNoteRecording : Entity
 {

@@ -1,9 +1,4 @@
-﻿using ClinicalGrpcService.Domain.Entities;
-using ClinicalGrpcService.Domain.ValueObjetcs;
-using ClinicalGrpcService.Infra.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace ClinicalGrpcService.Infra.Services;
 

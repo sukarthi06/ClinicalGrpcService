@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using ClinicalGrpcService.Domain.Exceptions;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
@@ -19,6 +20,14 @@ public class ExceptionInterceptor(ILogger<ExceptionInterceptor> logger) : Interc
             Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.Message);
             Activity.Current?.AddException(ex);
             throw new RpcException(new Status(StatusCode.InvalidArgument, ex.Message));
+        }
+        catch (ConflictException ex)
+        {
+            // Expected business case (duplicate), not a server error:
+            // warning only, no stack trace, span not marked as failed
+            logger.LogWarning("{ConflictType} in {Method}", ex.GetType().Name, context.Method);
+            Activity.Current?.SetTag("conflict.type", ex.GetType().Name);
+            throw new RpcException(new Status(StatusCode.AlreadyExists, ex.Message));
         }
         catch (Exception ex)
         {

@@ -1,6 +1,4 @@
-﻿using ClinicalGrpcService.Infra.Interfaces;
-using ClinicalGrpcService.Infra.Services;
-using Microsoft.EntityFrameworkCore;
+﻿using ClinicalGrpcService.Infra.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -40,6 +38,12 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IPhysicianNoteRecordingRepo, PhysicianNoteRecordingRepo>();
+        services.AddScoped<IPatientRepo, PatientRepo>();
+        services.AddOptions<FieldEncryptionOptions>()
+            .Bind(configuration.GetSection(FieldEncryptionOptions.SectionName));
+        services.AddSingleton<IFieldEncryptor, AesGcmFieldEncryptor>();
+        services.AddSingleton<PatientLookupHasher>();
+        services.AddSingleton<PatientLookupUpdater>();
 
         return services;
     }

@@ -1,4 +1,4 @@
-﻿namespace ClinicalGrpcService.Domain.Entities;
+﻿namespace ClinicalGrpcService.Domain.Entities.Abstraction;
 
 public abstract class Entity
 {

@@ -1,9 +1,4 @@
-﻿using ClinicalGrpcService.Domain.Entities;
-using ClinicalGrpcService.Domain.ValueObjetcs;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace ClinicalGrpcService.Infra.Configuration;
+﻿namespace ClinicalGrpcService.Infra.Configuration;
 
 public sealed class PhysicianNoteRecordingConfiguration
     : IEntityTypeConfiguration<PhysicianNoteRecording>

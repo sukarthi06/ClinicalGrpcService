@@ -1,7 +1,4 @@
-﻿using ClinicalGrpcService.Domain.Entities;
-using ClinicalGrpcService.Domain.ValueObjetcs;
-
-namespace ClinicalGrpcService.Infra.Interfaces;
+﻿namespace ClinicalGrpcService.Infra.Interfaces;
 
 public interface IPhysicianNoteRecordingRepo
 {

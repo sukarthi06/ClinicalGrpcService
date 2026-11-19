@@ -4,4 +4,5 @@
   <Project Path="ClinicalGrpcService.Grpc/ClinicalGrpcService.Grpc.csproj" />
   <Project Path="ClinicalGrpcService.Infra/ClinicalGrpcService.Infra.csproj" />
   <Project Path="ClinicalGrpcService.ServiceDefaults/ClinicalGrpcService.ServiceDefaults.csproj" />
+  <Project Path="ClinicalService.Api/ClinicalService.Api.csproj" Id="bd4a924d-a43d-4312-9599-99ec348a9272" />
 </Solution>

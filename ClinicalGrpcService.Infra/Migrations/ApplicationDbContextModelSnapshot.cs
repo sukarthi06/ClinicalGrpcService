@@ -17,10 +17,118 @@ namespace ClinicalGrpcService.Infra.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("ClinicalGrpcService.Domain.Entities.Patients.Patient", b =>
+                {
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AddressLine1")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AddressLine2")
+                        .HasColumnType("text");
+
+                    b.Property<string>("City")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DoB")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("text");
+
+                    b.Property<string>("EmailHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LastModifiedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Mrn")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("MRN");
+
+                    b.Property<string>("MrnHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhoneHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("RecordStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<short?>("Sex")
+                        .HasColumnType("smallint");
+
+                    b.Property<short?>("SexByBirth")
+                        .HasColumnType("smallint");
+
+                    b.Property<string>("State")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Zip")
+                        .HasColumnType("text");
+
+                    b.HasKey("PatientId");
+
+                    b.HasIndex("OrganizationId", "MrnHash")
+                        .IsUnique();
+
+                    b.ToTable("Patient", "patients");
+                });
+
+            modelBuilder.Entity("ClinicalGrpcService.Domain.Entities.Patients.PatientNameToken", b =>
+                {
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("OrganizationId", "TokenHash", "PatientId");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("PatientNameToken", "patients");
+                });
 
             modelBuilder.Entity("ClinicalGrpcService.Domain.Entities.PhysicianNoteRecording", b =>
                 {
@@ -53,6 +161,20 @@ namespace ClinicalGrpcService.Infra.Migrations
                     b.HasKey("PhysicianNoteId");
 
                     b.ToTable("PhysicianNoteRecording", "notes");
+                });
+
+            modelBuilder.Entity("ClinicalGrpcService.Domain.Entities.Patients.PatientNameToken", b =>
+                {
+                    b.HasOne("ClinicalGrpcService.Domain.Entities.Patients.Patient", null)
+                        .WithMany("NameTokens")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ClinicalGrpcService.Domain.Entities.Patients.Patient", b =>
+                {
+                    b.Navigation("NameTokens");
                 });
 #pragma warning restore 612, 618
         }
