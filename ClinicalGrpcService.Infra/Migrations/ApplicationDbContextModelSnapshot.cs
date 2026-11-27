@@ -130,6 +130,36 @@ namespace ClinicalGrpcService.Infra.Migrations
                     b.ToTable("PatientNameToken", "patients");
                 });
 
+            modelBuilder.Entity("ClinicalGrpcService.Domain.Entities.Patients.PatientRecording", b =>
+                {
+                    b.Property<Guid>("RecordingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LastModifiedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("RecordStatus")
+                        .HasColumnType("integer");
+
+                    b.HasKey("RecordingId");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("PatientRecording", "patients");
+                });
+
             modelBuilder.Entity("ClinicalGrpcService.Domain.Entities.PhysicianNoteRecording", b =>
                 {
                     b.Property<Guid>("PhysicianNoteId")
@@ -169,6 +199,15 @@ namespace ClinicalGrpcService.Infra.Migrations
                         .WithMany("NameTokens")
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ClinicalGrpcService.Domain.Entities.Patients.PatientRecording", b =>
+                {
+                    b.HasOne("ClinicalGrpcService.Domain.Entities.Patients.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

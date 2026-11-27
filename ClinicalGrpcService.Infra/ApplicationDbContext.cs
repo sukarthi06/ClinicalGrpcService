@@ -6,6 +6,7 @@ public class ApplicationDbContext(
 {
     public DbSet<PhysicianNoteRecording> PhysicianNoteRecording { get; set; } = default!;
     public DbSet<Patient> Patients { get; set; } = default!;
+    public DbSet<PatientRecording> PatientRecordings { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -24,4 +24,7 @@ public interface IPatientService
         OrganizationId organizationId,
         string? mrn, string? email, string? phone, string? name,
         int pageNumber, int pageSize, CancellationToken ct);
+
+    Task<bool> LinkRecordingAsync(
+        PatientId patientId, RecordingId recordingId, Guid? userId, CancellationToken ct);
 }

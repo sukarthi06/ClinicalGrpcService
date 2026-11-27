@@ -8,3 +8,4 @@ global using Microsoft.Extensions.Logging;
 global using ClinicalGrpcService.Infra.Configuration.Patients;
 global using ClinicalGrpcService.Infra.Security;
 global using ClinicalGrpcService.Infra.Abstraction;
+global using ClinicalGrpcService.Domain.Exceptions;

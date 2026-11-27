@@ -36,4 +36,14 @@ public interface IPatientRepo : IRepo<Patient>
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Links a recording to an active patient of the organization.
+    /// Returns false if the patient isn't found. Sending the same link twice is fine.
+    /// </summary>
+    Task<bool> LinkRecordingAsync(
+        PatientId patientId,
+        RecordingId recordingId,
+        Guid? userId,
+        CancellationToken cancellationToken);
 }

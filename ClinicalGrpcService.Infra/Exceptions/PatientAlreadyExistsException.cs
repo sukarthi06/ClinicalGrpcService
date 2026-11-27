@@ -1,6 +1,4 @@
-﻿using ClinicalGrpcService.Domain.Exceptions;
-
-namespace ClinicalGrpcService.Infra.Exceptions;
+﻿namespace ClinicalGrpcService.Infra.Exceptions;
 
 // The message carries only the PatientId, never the MRN or other patient data
 public sealed class PatientAlreadyExistsException(PatientId? existingPatientId)

@@ -60,6 +60,14 @@ public static class PatientEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        group.MapPost("/{patientId:guid}/recordings", LinkRecordingAsync)
+            .WithName("LinkPatientRecording")
+            .WithSummary("Links a recording to an active patient.")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .WithValidation<LinkRecordingRequest>();
+
         return app;
     }
 
@@ -154,6 +162,19 @@ public static class PatientEndpoints
     {
         return await patientService.DeleteAsync(
                 PatientId.Of(patientId), OrganizationId.Of(organizationId), userId, ct)
+            ? TypedResults.NoContent()
+            : TypedResults.NotFound();
+    }
+
+    private static async Task<Results<NoContent, NotFound>> LinkRecordingAsync(
+        Guid patientId,
+        LinkRecordingRequest request,
+        [FromHeader(Name = GatewayHeaders.UserId)] Guid? userId,
+        IPatientService patientService,
+        CancellationToken ct)
+    {
+        return await patientService.LinkRecordingAsync(
+                PatientId.Of(patientId), RecordingId.Of(request.RecordingId), userId, ct)
             ? TypedResults.NoContent()
             : TypedResults.NotFound();
     }

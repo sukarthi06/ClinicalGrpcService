@@ -236,8 +236,8 @@ public class PatientRepo(
             .AsNoTracking()
             .Where(p => p.OrganizationId == organizationId && p.RecordStatus == 1)
             // Encrypted columns can't be sorted in the database, so sort by plain columns
-            .OrderBy(p => p.CreatedAt)
-            .ThenBy(p => p.PatientId)
+            //.OrderBy(p => p.Name)
+            //.ThenBy(p => p.PatientId)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
@@ -359,5 +359,46 @@ public class PatientRepo(
         activity?.SetTag("patients.count", patients.Count);
 
         return patients;
+    }
+
+    public async Task<bool> LinkRecordingAsync(
+    PatientId patientId,
+    RecordingId recordingId,
+    Guid? userId,
+    CancellationToken cancellationToken)
+    {
+        using var activity = ActivitySource.StartActivity(nameof(LinkRecordingAsync));
+                
+        var patientExists = await dbContext.Patients.AnyAsync(
+            p => p.PatientId == patientId && p.RecordStatus == 1,
+            cancellationToken);
+        if (!patientExists)
+        {
+            logger.LogWarning("Patient {PatientId} not found when linking recording {RecordingId} by User:{UserId}",
+                patientId.Value, recordingId.Value, userId);
+            return false;
+        }
+
+        var existing = await dbContext.PatientRecordings
+            .FirstOrDefaultAsync(x => x.RecordingId == recordingId, cancellationToken);
+        if (existing is not null)
+        {
+            if (existing.PatientId == patientId) return true;   // same link sent twice
+            throw new RecordingAlreadyLinkedException();
+        }
+
+        dbContext.PatientRecordings.Add(new PatientRecording
+        {
+            RecordingId = recordingId,
+            PatientId = patientId,
+            CreatedBy = userId
+        });
+        var result = await dbContext.SaveChangesAsync(cancellationToken);
+        if (result > 0)
+        {
+            logger.LogInformation("Recording {RecordingId} linked to patient {PatientId} by User:{UserId}",
+                recordingId.Value, patientId.Value, userId);
+        }
+        return result > 0;
     }
 }

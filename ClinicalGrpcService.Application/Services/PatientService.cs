@@ -49,4 +49,8 @@ public class PatientService(IPatientRepo patientRepo) : IPatientService
         string? mrn, string? email, string? phone, string? name,
         int pageNumber, int pageSize, CancellationToken ct) =>
         patientRepo.SearchPatientsAsync(organizationId, null, mrn, email, phone, name, pageNumber, pageSize, ct);
+
+    public Task<bool> LinkRecordingAsync(
+        PatientId patientId, RecordingId recordingId, Guid? userId, CancellationToken ct) =>
+        patientRepo.LinkRecordingAsync(patientId, recordingId, userId, ct);
 }
